@@ -1,0 +1,87 @@
+.upload-container {
+    width: 350px;
+    height: 300px;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background-color: #f9fafb;
+    margin-right: 20px;
+    margin-left: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .upload-container:hover {
+    border-color: #477ef6;
+    background-color: #f0f7ff;
+  }
+  
+  .drag-active {
+    border-color: #10b981;
+    background-color: #ecfdf5;
+  }
+  
+  .upload-placeholder {
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .upload-icon {
+    font-size: 40px;
+    color: #477ef6;
+    margin-bottom: 10px;
+  }
+  
+  .upload-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: #111827;
+    margin-bottom: 4px;
+  }
+  
+  .upload-subtext {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 8px;
+  }
+  
+  .file-requirements {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+  
+  .preview-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  
+  .uploaded-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .hover-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  .preview-wrapper:hover .hover-overlay {
+    opacity: 1;
+  }

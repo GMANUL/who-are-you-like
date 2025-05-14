@@ -1,0 +1,31 @@
+.error-display {
+    margin: 8px auto;
+    padding: 10px 16px;
+    max-width: 600px;
+    background-color: #ffe6e6;
+    border: 1px solid #ff4d4f;
+    border-radius: 6px;
+    text-align: center;
+    color: #a70000;
+    font-size: 18px;
+    line-height: 1.2;
+  }
+  
+  
+  .error-display button {
+    margin-top: 5px;
+    padding: 5px 10px;
+    font-size: 16px;
+    background-color: #ff4d4f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .error-display button:hover {
+    background-color: #d9363e;
+  }
+  
+  
+  
