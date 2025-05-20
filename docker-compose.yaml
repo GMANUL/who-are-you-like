@@ -1,0 +1,19 @@
+services:
+  backend:
+    build: 
+      context: backend
+      dockerfile: Dockerfile
+    
+    ports:
+      - 8000:8000
+    
+    volumes:
+      - ./celeb_data:/app/celeb_data
+      - ./celeb_faces_imdb:/app/celeb_faces_imdb
+  
+  frontend:
+    build: 
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
