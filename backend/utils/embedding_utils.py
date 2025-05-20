@@ -23,12 +23,13 @@ class Embeddings:
         index.add(embedding_matrix)
         return index
     
-    def get_embedding_index(self) -> list:
+    def get_embedding_index(self) -> tuple:
         return list(int(name) for name in self.embeddings.keys())
     
     def find_top_indices(self, embedding: np.ndarray, top_k: int = 5) -> list:
         
         faiss.normalize_L2(embedding)
         Distance, FaissIndex = self.faiss_index.search(embedding, top_k)
-        embedding_indices = list(self.embedding_index[i] for i in FaissIndex[0])
-        return embedding_indices
+        top_indices = list(self.embedding_index[i] for i in FaissIndex[0])
+        top_distances = Distance[0].tolist()
+        return top_indices, top_distances

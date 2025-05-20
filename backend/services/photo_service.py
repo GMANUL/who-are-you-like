@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 
 
 class PhotoService:
-    def __init__(self, image_dir:str = "C:\\face_dataset\\faces_imdb_test"):
+    def __init__(self, image_dir:str = "celeb_faces_imdb"):
         self.image_dir = image_dir
 
     def get_celeb_photo(self, celeb_id: int) -> FileResponse:
