@@ -1,6 +1,6 @@
 services:
   backend:
-    stop_signal: SIGTEGN
+    stop_signal: SIGTERM
     stop_grace_period: 20s
     build:
       context: backend
