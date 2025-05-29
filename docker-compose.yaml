@@ -1,6 +1,8 @@
 services:
   backend:
-    build: 
+    stop_signal: SIGTEGN
+    stop_grace_period: 20s
+    build:
       context: backend
       dockerfile: Dockerfile
     
