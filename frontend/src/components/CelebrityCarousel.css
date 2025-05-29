@@ -54,7 +54,7 @@
 }
 
 .nav-button:hover {
-  background: #477ef6;
+  background: #167bf6;
   transform: scale(1.1);
 }
 
@@ -74,6 +74,6 @@
 }
 
 .indicator-dot.active {
-  background-color: #477ef6;
+  background-color: #167bf6;
   transform: scale(1.2);
 }

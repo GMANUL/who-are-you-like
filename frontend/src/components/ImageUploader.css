@@ -17,7 +17,7 @@
   }
   
   .upload-container:hover {
-    border-color: #477ef6;
+    border-color: #167bf6;
     background-color: #f0f7ff;
   }
   
@@ -33,7 +33,7 @@
   
   .upload-icon {
     font-size: 40px;
-    color: #477ef6;
+    color: #167bf6;
     margin-bottom: 10px;
   }
   
