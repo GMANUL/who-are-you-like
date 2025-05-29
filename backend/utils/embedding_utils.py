@@ -1,35 +1,84 @@
 import os
 import numpy as np
 import faiss
+import signal
+import time
+from typing import Optional, Tuple, List
+from threading import Thread
+from settings.settings import settings
+
 
 class Embeddings:
-    def __init__(self, npz_path: str):
-        self.embeddings = self.load_embeddings(npz_path)
-        self.faiss_index = self.create_faiss_index()
-        self.embedding_index = self.get_embedding_index()
+
+    _instance: Optional['Embeddings'] = None
+    _initialized: bool = False
+
+
+    def __new__(cls):
+
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+
+    def __init__(self) -> None:
+
+        if not self._initialized:
+            self.faiss_path = settings.paths.embeddings
+            self.loaded_index = self.load_faiss_index(self.faiss_path)
+
+            signal.signal(signal.SIGTERM, self.handle_termination)
+            self.last_modified = False
+
+            self._saver_thread = Thread(target=self._background_saver, daemon=True)
+            self._saver_thread.start()
+            self._initialized = True
+
+
+    def handle_termination(self, signum, frame) -> None:
+
+        self.auto_save()
+        os._exit(0)
     
-    def load_embeddings(self, path: str) -> dict:
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"Embedding file {path} not found")
-        saved_data = np.load(path)
-        embeddings = dict(zip(saved_data['names'], saved_data['embeddings']))
-        return embeddings
+
+    def _background_saver(self) -> None:
+
+        while True:
+            time.sleep(600)
+            self.auto_save()
     
-    def create_faiss_index(self) -> faiss.IndexFlatIP:
-        embedding_matrix = np.stack(list(self.embeddings.values())).astype('float32')
-        faiss.normalize_L2(embedding_matrix)
-        embedding_dim = embedding_matrix.shape[1]
-        index = faiss.IndexFlatIP(embedding_dim)
-        index.add(embedding_matrix)
+
+    def auto_save(self) -> None:
+
+        if self.last_modified:
+            self._save()
+    
+
+    def _save(self) -> None:
+        
+        temp_path = f"{self.faiss_path}.tmp"
+        faiss.write_index(self.loaded_index, temp_path)
+        os.replace(temp_path, self.faiss_path)
+        self.last_modified = False
+    
+
+    def load_faiss_index(self, path: str) -> faiss.IndexFlatIP:
+
+        index = faiss.read_index(path)
         return index
     
-    def get_embedding_index(self) -> tuple:
-        return list(int(name) for name in self.embeddings.keys())
-    
-    def find_top_indices(self, embedding: np.ndarray, top_k: int = 5) -> list:
-        
+
+    def add_embedding(self, embedding: np.ndarray) -> None:
+
         faiss.normalize_L2(embedding)
-        Distance, FaissIndex = self.faiss_index.search(embedding, top_k)
-        top_indices = list(self.embedding_index[i] for i in FaissIndex[0])
+        self.loaded_index.add(embedding)
+        self.last_modified = True
+    
+     
+    def find_top_indices(self, embedding: np.ndarray, top_k: int = 5) -> Tuple[List[int], List[float]]:
+
+        faiss.normalize_L2(embedding)
+        Distance, FaissIndex = self.loaded_index.search(embedding, top_k)
+        top_indices = list(int(i) for i in FaissIndex[0])
         top_distances = Distance[0].tolist()
         return top_indices, top_distances
