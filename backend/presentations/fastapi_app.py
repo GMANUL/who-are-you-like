@@ -1,12 +1,15 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from pydantic import BaseModel
 import io
+from typing import List
+
 from services.face_service import FaceService
 from services.photo_service import PhotoService
 from services.person_service import PersonService
-from typing import List
+
 
 
 app = FastAPI(title="I like a celeb!")
@@ -24,24 +27,29 @@ app.add_middleware(
 )
 
 
-class TopImages(BaseModel):
-    matches: List[dict]
+class MatchItem(BaseModel):
+    id: int
+    name: str
+    distance: float
 
-class NameList(BaseModel):
+class MatchResponse(BaseModel):
+    matches: List[MatchItem]
+
+class NameResponse(BaseModel):
     names: List[str]
 
 
+
 @app.post('/compare')
-async def search_similar(
-    file: UploadFile = File(..., description='Фото для сравнения')
-):
+async def search_similar(file: UploadFile = File(..., description='Фото для сравнения')) -> MatchResponse:
+
     try:
         contents = await file.read()
         if not contents:
             raise HTTPException(status_code=400, detail="Пустой файл")
         img = Image.open(io.BytesIO(contents)).convert("RGB")
         match_list = await face_service.get_match_list(img)
-        return TopImages(matches=match_list)
+        return MatchResponse(matches=match_list)
     
     except Image.UnidentifiedImageError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Неподдерживаемый формат изображения")
@@ -50,18 +58,22 @@ async def search_similar(
 
 
 @app.get("/photo/{celeb_id}")
-async def get_photo(celeb_id: int):
+async def get_photo(celeb_id: int) -> FileResponse:
+
     return photo_service.get_celeb_photo(celeb_id)
 
 
 @app.get("/search/{name_query}")
-async def get_similar_names(name_query: str):
+async def get_similar_names(name_query: str) -> NameResponse:
+
     name_list = await person_service.get_similar_names(name_query)
-    return NameList(names=name_list)
+    return NameResponse(names=name_list)
 
 
 @app.post("/new_celebrity")
-async def create_celebrity(celeb_name: str = Form(..., min_length=3, max_length=25), file: UploadFile = File(..., description='Фото для новой знаменитости')):
+async def create_celebrity(celeb_name: str = Form(..., min_length=3, max_length=25), 
+                           file: UploadFile = File(..., description='Фото для новой знаменитости')) -> None:
+    
     try:
         contents = await file.read()
         if not contents:
