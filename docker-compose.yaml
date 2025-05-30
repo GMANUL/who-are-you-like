@@ -10,7 +10,7 @@ services:
       - 8000:8000
     
     volumes:
-      - ./tiny_dataset:/app/tiny_dataset
+      - ./imdb_dataset:/app/imdb_dataset
       - ./data:/app/data
   
   frontend:

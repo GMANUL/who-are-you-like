@@ -12,10 +12,10 @@ EMBEDDINGS_FILE = str(os.getenv('EMBEDDINGS_FILE'))
 IMAGES_DIR = str(os.getenv('IMAGES_DIR'))
 """
 
-DB_PATH='data/sqlite_tiny.db'
+DB_PATH='data/sqlite_imdb.db'
 APP_PATH='/app'
-DATASET_NAME='tiny_dataset'
-NAME_LIST_FILE='celeb_names_tiny.txt'
-EMBEDDINGS_FILE='tiny_embeddings.faiss'
-IMAGES_DIR='tiny_imdb'
+DATASET_NAME='imdb_dataset'
+NAME_LIST_FILE='celeb_names.txt'
+EMBEDDINGS_FILE='embeddings.faiss'
+IMAGES_DIR='celeb_images'
 EMBEDDING_MODEL_WEIGHTS='/weights/facenet-torch/20180402-114759-vggface2.pt'
