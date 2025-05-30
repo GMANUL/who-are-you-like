@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-DB_FILE="/app/data/sqlite_tiny.db"
+DB_FILE="./data/sqlite_imdb.db"
 
 if [ ! -f "$DB_FILE" ]; then
     echo "Инициализация БД..."
-    python ./init_db.py
+    python ./initialization/init_db.py
 fi
 
 exec "$@"

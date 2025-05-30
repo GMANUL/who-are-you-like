@@ -1,5 +1,9 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
 
 from persistent.db.celebrity import Celebrity
 from settings.settings import settings
