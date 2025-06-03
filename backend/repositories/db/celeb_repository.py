@@ -2,6 +2,8 @@ from infrastructure.sqlite.connection import sqlite_connection
 from persistent.db.celebrity import Celebrity
 from sqlalchemy import insert, select, func
 from typing import List
+from Levenshtein import distance as lev
+
 
 class CelebRepository:
 
@@ -46,12 +48,24 @@ class CelebRepository:
         return row[0]
 
 
-    async def name_search(self, search_query: str, max_results: int = 10) -> List[str]:
+    async def name_search(self, search_query: str, max_results: int = 10, max_distance: int = 10) -> List[str]:
 
-        stmt = (select(Celebrity.name).where(Celebrity.name.ilike(f"%{search_query}%")).limit(max_results))
+        first_letters = search_query[:3].lower()
+        stmt = select(Celebrity.name).where(
+            func.lower(Celebrity.name).startswith(first_letters)
+        ).limit(1000)
 
         async with self.sessionmaker() as session:
             result = await session.execute(stmt)
 
         candidates = result.scalars().all()
-        return candidates
+        
+        if not candidates:
+            return []
+        
+        scored = [(name, lev(search_query.lower(), name.lower())) for name in candidates]
+        scored.sort(key=lambda x: x[1])
+        
+        filtered = [name for name, dist in scored if dist <= max_distance]
+        
+        return filtered[:max_results]
