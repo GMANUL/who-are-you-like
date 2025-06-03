@@ -6,6 +6,8 @@ export default function CelebrityAddForm({ onError, onSuccess }) {
   const [celebName, setCelebName] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmationData, setConfirmationData] = useState(null);
   const API_URL = 'http://localhost:8000';
 
   const handleFileChange = (e) => {
@@ -13,26 +15,40 @@ export default function CelebrityAddForm({ onError, onSuccess }) {
     setSelectedFile(file);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const validateForm = () => {
     if (!celebName.trim()) {
       onError('Введите имя знаменитости');
-      return;
+      return false;
     }
     
     if (celebName.trim().length < 3) {
       onError('Имя должно содержать минимум 3 символа');
-      return;
+      return false;
     }
     
     if (celebName.trim().length > 25) {
       onError('Имя не должно превышать 25 символов');
-      return;
+      return false;
     }
 
     if (!selectedFile) {
       onError('Выберите фото знаменитости');
+      return false;
+    }
+
+    return true;
+  };
+
+  const createFormData = (force = false) => {
+    const formData = new FormData();
+    formData.append('celeb_name', celebName.trim());
+    formData.append('file', selectedFile);
+    formData.append('force', force.toString());
+    return formData;
+  };
+
+  const submitCelebrity = async (force = false) => {
+    if (!force && !validateForm()) {
       return;
     }
 
@@ -40,22 +56,29 @@ export default function CelebrityAddForm({ onError, onSuccess }) {
     onError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('celeb_name', celebName.trim());
-      formData.append('file', selectedFile);
+      const formData = createFormData(force);
 
       const response = await fetch(`${API_URL}/new_celebrity`, {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Проверяем, является ли ответ ConfirmationResponse
+        if (data && data.status === 'confirmation_required') {
+          setConfirmationData(data);
+          setShowConfirmation(true);
+        } else {
+          // Успешное создание
+          onSuccess('Знаменитость успешно добавлена!');
+          resetForm();
+        }
+      } else {
         const errorData = await response.json();
         throw new Error(errorData.detail || `Ошибка: ${response.status}`);
       }
-
-      onSuccess('Знаменитость успешно добавлена!');
-      resetForm();
 
     } catch (err) {
       onError(err.message);
@@ -64,10 +87,27 @@ export default function CelebrityAddForm({ onError, onSuccess }) {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await submitCelebrity(false);
+  };
+
+  const handleConfirmationYes = async () => {
+    setShowConfirmation(false);
+    await submitCelebrity(true); // Отправляем с force=true
+  };
+
+  const handleConfirmationNo = () => {
+    setShowConfirmation(false);
+    setConfirmationData(null);
+  };
+
   const resetForm = () => {
     setCelebName('');
     setSelectedFile(null);
     setShowForm(false);
+    setShowConfirmation(false);
+    setConfirmationData(null);
     
     const fileInput = document.getElementById('file-input');
     if (fileInput) {
@@ -95,7 +135,7 @@ export default function CelebrityAddForm({ onError, onSuccess }) {
         </div>
       ) : (
         <div className="form-section">
-          <form onSubmit={handleSubmit} className="celebrity-form">
+          <div className="celebrity-form">
             <div className="form-group">
               <label htmlFor="celeb-name">Имя знаменитости:</label>
               <input
@@ -128,7 +168,8 @@ export default function CelebrityAddForm({ onError, onSuccess }) {
 
             <div className="form-buttons">
               <button 
-                type="submit" 
+                type="button"
+                onClick={handleSubmit}
                 disabled={loading}
                 className="submit-button"
               >
@@ -143,7 +184,55 @@ export default function CelebrityAddForm({ onError, onSuccess }) {
                 Отмена
               </button>
             </div>
-          </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmation && confirmationData && (
+        <div className="confirmation-overlay">
+          <div className="confirmation-modal">
+            <div className="confirmation-header">
+              <h3>Подтверждение действия</h3>
+              <button 
+                className="close-button"
+                onClick={handleConfirmationNo}
+                aria-label="Закрыть"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="confirmation-content">
+              <p className="confirmation-message">{confirmationData.message}</p>
+              
+              {confirmationData.similar_names && confirmationData.similar_names.length > 0 && (
+                <div className="similar-names-section">
+                  <p className="similar-names-title">Похожие имена:</p>
+                  <ul className="similar-names-list">
+                    {confirmationData.similar_names.map((name, index) => (
+                      <li key={index}>{name}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <div className="confirmation-buttons">
+              <button
+                onClick={handleConfirmationNo}
+                className="confirmation-cancel-button"
+              >
+                Нет, отменить
+              </button>
+              <button
+                onClick={handleConfirmationYes}
+                className="confirmation-confirm-button"
+              >
+                Да, добавить
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
