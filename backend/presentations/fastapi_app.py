@@ -4,11 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from pydantic import BaseModel
 import io
-from typing import List
+from typing import List, Union
 
 from services.face_service import FaceService
 from services.photo_service import PhotoService
-from services.person_service import PersonService
+from services.person_service import PersonService, ActionConfirmationRequired
 
 
 
@@ -38,6 +38,11 @@ class MatchResponse(BaseModel):
 class NameResponse(BaseModel):
     names: List[str]
 
+class ConfirmationResponse(BaseModel):
+    status: str = "confirmation_required"
+    message: str
+    similar_names: list[str]
+    
 
 
 @app.post('/compare')
@@ -72,7 +77,9 @@ async def get_similar_names(name_query: str) -> NameResponse:
 
 @app.post("/new_celebrity")
 async def create_celebrity(celeb_name: str = Form(..., min_length=3, max_length=25), 
-                           file: UploadFile = File(..., description='Фото для новой знаменитости')) -> None:
+                           file: UploadFile = File(..., description='Фото для новой знаменитости'),
+                           force: bool = Form(False, description="Подтверждение добавления при наличии похожих имен")
+                           ) -> Union[None, ConfirmationResponse]:
     
     try:
         contents = await file.read()
@@ -80,7 +87,10 @@ async def create_celebrity(celeb_name: str = Form(..., min_length=3, max_length=
             raise HTTPException(status_code=400, detail="Пустой файл")
         photo = Image.open(io.BytesIO(contents)).convert("RGB")
     
-        await person_service.add_celebrity(celeb_name, photo)
+        await person_service.add_celebrity(celeb_name, photo, force=force)
+    
+    except ActionConfirmationRequired as e:
+        return ConfirmationResponse(message=e.message, similar_names=e.details["similar_names"])
 
     except Image.UnidentifiedImageError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Неподдерживаемый формат изображения")
