@@ -11,17 +11,22 @@ from services.handlers import(
 from .factories.celebrity_factory import CelebrityFactory
 from repositories.db.celeb_repository import CelebRepository
 from utils.embedding_utils import Embeddings
-from utils.facenet_utils import FaceNet
+from utils.facenet_utils import FaceNet, MobileNet
+from settings.settings import settings
 
 
 class PersonService:
 
     def __init__(self) -> None:    
         self.celeb_repository = CelebRepository()
-        self.embeddings = Embeddings()
+        self.facenet_embeddings = Embeddings(settings.paths.facenet_emb)
+        self.mobilenet_embeddings = Embeddings(settings.paths.mobilenet_emb)
         self.facenet = FaceNet()
+        self.mobilenet = MobileNet()
 
-        self.celebrity_factory = CelebrityFactory(self.celeb_repository, self.facenet, self.embeddings)
+        self.celebrity_factory = CelebrityFactory(self.celeb_repository, 
+                                                  self.facenet, self.facenet_embeddings,
+                                                  self.mobilenet, self.mobilenet_embeddings)
         self._create_chains()
 
     
@@ -34,7 +39,8 @@ class PersonService:
     def _build_full_chain(self):
 
         chain = SaveCelebrityHandler(self.celebrity_factory)
-        chain = EmbeddingCheckHandler(self.facenet, self.embeddings, chain)
+        chain = EmbeddingCheckHandler(self.facenet, self.facenet_embeddings, chain)
+        chain = EmbeddingCheckHandler(self.mobilenet, self.mobilenet_embeddings, chain)
         chain = FuzzyNameCheckHandler(self.celeb_repository, chain)
         chain = ExactNameCheckHandler(self.celeb_repository, chain)
         return chain
@@ -43,7 +49,8 @@ class PersonService:
     def _build_force_chain(self):
 
         chain = SaveCelebrityHandler(self.celebrity_factory)
-        chain = EmbeddingCheckHandler(self.facenet, self.embeddings, chain)
+        chain = EmbeddingCheckHandler(self.facenet, self.facenet_embeddings, chain)
+        chain = EmbeddingCheckHandler(self.mobilenet, self.mobilenet_embeddings, chain)
         return chain
 
 

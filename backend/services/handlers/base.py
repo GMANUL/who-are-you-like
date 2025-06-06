@@ -9,6 +9,6 @@ class AddCelebrityHandler(ABC):
         self.next_handler = next_handler
 
     @abstractmethod
-    async def handle(self, name: str, image: Image.Image) -> None:
+    async def handle(self, name: str, image: Image.Image, **kwargs) -> None:
         if self.next_handler:
             await self.next_handler.handle(name, image)
