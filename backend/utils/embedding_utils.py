@@ -3,36 +3,36 @@ import numpy as np
 import faiss
 import signal
 import time
-from typing import Optional, Tuple, List
+from typing import Dict, Tuple, List
 from threading import Thread
 from settings.settings import settings
 
 
 class Embeddings:
 
-    _instance: Optional['Embeddings'] = None
-    _initialized: bool = False
+    _instances: Dict[str, 'Embeddings'] = {}
+    _initialized_flags: Dict[str, bool] = {}
+
+    def __new__(cls, faiss_path: str):
+
+        if faiss_path not in cls._instances:
+            cls._instances[faiss_path] = super().__new__(cls)
+        return cls._instances[faiss_path]
 
 
-    def __new__(cls):
+    def __init__(self, faiss_path: str) -> None:
 
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-
-    def __init__(self) -> None:
-
-        if not self._initialized:
-            self.faiss_path = settings.paths.embeddings
+        if not self._initialized_flags.get(faiss_path, False):
+            self.faiss_path = faiss_path
             self.loaded_index = self.load_faiss_index(self.faiss_path)
-
+            
             signal.signal(signal.SIGTERM, self.handle_termination)
             self.last_modified = False
-
+            
             self._saver_thread = Thread(target=self._background_saver, daemon=True)
             self._saver_thread.start()
-            self._initialized = True
+            
+            self._initialized_flags[faiss_path] = True
 
 
     def handle_termination(self, signum, frame) -> None:
