@@ -17,16 +17,24 @@ from settings.settings import settings
 
 class PersonService:
 
-    def __init__(self) -> None:    
+    def __init__(self, use_mobilenet: bool = False) -> None:    
         self.celeb_repository = CelebRepository()
-        self.facenet_embeddings = Embeddings(settings.paths.facenet_emb)
-        self.mobilenet_embeddings = Embeddings(settings.paths.mobilenet_emb)
         self.facenet = FaceNet()
-        self.mobilenet = MobileNet()
+        self.facenet_embeddings = Embeddings(settings.paths.facenet_emb)
+        self.use_mobilenet = use_mobilenet
 
-        self.celebrity_factory = CelebrityFactory(self.celeb_repository, 
-                                                  self.facenet, self.facenet_embeddings,
-                                                  self.mobilenet, self.mobilenet_embeddings)
+        if self.use_mobilenet:
+            self.mobilenet = MobileNet()
+            self.mobilenet_embeddings = Embeddings(settings.paths.mobilenet_emb)
+
+        self.celebrity_factory = CelebrityFactory(
+            celeb_repository = self.celeb_repository, 
+            facenet = self.facenet, 
+            facenet_embeddings = self.facenet_embeddings,
+            mobilenet = self.mobilenet if self.use_mobilenet else None,
+            mobilenet_embeddings = self.mobilenet_embeddings if self.use_mobilenet else None
+        )
+
         self._create_chains()
 
     
@@ -40,7 +48,10 @@ class PersonService:
 
         chain = SaveCelebrityHandler(self.celebrity_factory)
         chain = EmbeddingCheckHandler(self.facenet, self.facenet_embeddings, chain)
-        chain = EmbeddingCheckHandler(self.mobilenet, self.mobilenet_embeddings, chain)
+
+        if self.use_mobilenet:
+            chain = EmbeddingCheckHandler(self.mobilenet, self.mobilenet_embeddings, chain)
+        
         chain = FuzzyNameCheckHandler(self.celeb_repository, chain)
         chain = ExactNameCheckHandler(self.celeb_repository, chain)
         return chain
@@ -50,7 +61,10 @@ class PersonService:
 
         chain = SaveCelebrityHandler(self.celebrity_factory)
         chain = EmbeddingCheckHandler(self.facenet, self.facenet_embeddings, chain)
-        chain = EmbeddingCheckHandler(self.mobilenet, self.mobilenet_embeddings, chain)
+
+        if self.use_mobilenet:
+            chain = EmbeddingCheckHandler(self.mobilenet, self.mobilenet_embeddings, chain)
+
         return chain
 
 

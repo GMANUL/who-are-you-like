@@ -10,12 +10,15 @@ from services.handlers.face_matcher import EmbeddingHandler, MatchResult
 
 class FaceService:
 
-    def __init__(self) -> None:
+    def __init__(self, use_mobilenet: bool = False) -> None:
         self.celeb_repository = CelebRepository()
         self.facenet = FaceNet()
-        self.mobilenet = MobileNet()
         self.facenet_embeddings = Embeddings(settings.paths.facenet_emb)
-        self.mobilenet_embeddings = Embeddings(settings.paths.mobilenet_emb)
+        self.use_mobilenet = use_mobilenet
+
+        if self.use_mobilenet:
+            self.mobilenet = MobileNet()
+            self.mobilenet_embeddings = Embeddings(settings.paths.mobilenet_emb)
 
 
     async def get_match_list(self, image: Image.Image) -> List[MatchResult]:
@@ -29,14 +32,14 @@ class FaceService:
             similarity_threshold=0.4,
         )
 
-        mobilenet_handler = EmbeddingHandler(
-            model=self.mobilenet,
-            embeddings=self.mobilenet_embeddings,
-            celeb_repository=self.celeb_repository,
-            similarity_threshold=0.7,
-            next_handler=facenet_handler,
-        )
-        
-        
-        return await mobilenet_handler.get_match_list(cropped_image)
-
+        if self.use_mobilenet:
+            mobilenet_handler = EmbeddingHandler(
+                model=self.mobilenet,
+                embeddings=self.mobilenet_embeddings,
+                celeb_repository=self.celeb_repository,
+                similarity_threshold=0.7,
+                next_handler=facenet_handler,
+            )
+            return await mobilenet_handler.get_match_list(cropped_image)
+        else:
+            return await facenet_handler.get_match_list(cropped_image)
